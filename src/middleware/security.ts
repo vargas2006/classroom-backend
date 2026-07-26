@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express"
-import aj from "../config/arcjet";
+import aj from "../config/arcjet.js";
 import { ArcjetNodeRequest, slidingWindow } from "@arcjet/node";
 
 
@@ -42,21 +42,21 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
         }
 
         const decision = await client.protect(arcjetRequest);
-        if(decision.isDenied() && decision.reason.isBot) {
+        if(decision.isDenied() && decision.reason.isBot()) {
             return res.status(403).json({ 
                 error: 'Forbidden',
                 message: 'Automated Request is not Allowed',
             })
         }
 
-        if(decision.isDenied() && decision.reason.isShield) {
+        if(decision.isDenied() && decision.reason.isShield()) {
             return res.status(403).json({ 
                 error: 'Forbidden',
                 message: 'Request Blocked by security policy',
             })
         }
 
-        if(decision.isDenied() && decision.reason.isRateLimit) {
+        if(decision.isDenied() && decision.reason.isRateLimit()) {
             return res.status(429).json({ 
                 error: 'Too many Request',
                 message
