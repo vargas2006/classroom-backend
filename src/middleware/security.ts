@@ -57,7 +57,7 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
         }
 
         if(decision.isDenied() && decision.reason.isRateLimit) {
-            return res.status(403).json({ 
+            return res.status(429).json({ 
                 error: 'Too many Request',
                 message
             })
