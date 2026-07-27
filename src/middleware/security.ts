@@ -34,11 +34,17 @@ const securityMiddleware = async (req: Request, res: Response, next: NextFunctio
             })
         )
 
+        const forwardedFor = req.headers['x-forwarded-for'];
+        const remoteAddress = (Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor?.split(',')[0]?.trim())
+            ?? req.socket.remoteAddress
+            ?? req.ip
+            ?? '127.0.0.1';
+
         const arcjetRequest: ArcjetNodeRequest = {
             headers: req.headers,
             method: req.method,
             url: req.originalUrl ?? req.url,
-            socket: { remoteAddress: req.socket.remoteAddress ?? req.ip ?? '0.0.0.0'},
+            socket: { remoteAddress },
         }
 
         const decision = await client.protect(arcjetRequest);

@@ -1,5 +1,3 @@
-import AgentAPI from "apminsight";
-AgentAPI.config
 
 import express from 'express';
 import subjectRouter from './routes/subjects.js';
@@ -32,5 +30,5 @@ app.get('/', (req, res) => {
 
 
 app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`Server is running on port http://0.0.0.0:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
