@@ -1,11 +1,14 @@
 
 import express from 'express';
 import subjectRouter from './routes/subjects.js';
+import userRouter from './routes/users.js';
 import cors from 'cors';
 import 'dotenv/config';
 import securityMiddleware from './middleware/security.js';
+import sessionMiddleware from './middleware/session.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth.js';
+import classRouter from './routes/classes.js';
 
 
 const app = express();
@@ -25,9 +28,12 @@ app.get('/', (req, res) => {
 app.all('/api/auth/*splat', toNodeHandler(auth))
 
 app.use(express.json());
+app.use('/api', sessionMiddleware)    // Attach session/user before rate limiting
 app.use('/api', securityMiddleware)  // Only protect /api routes, not health check
 
 app.use('/api/subjects', subjectRouter);
+app.use('/api/users', userRouter);
+app.use('/api/classes', classRouter);
 
 
 app.listen(Number(PORT), '0.0.0.0', () => {
