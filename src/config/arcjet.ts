@@ -1,7 +1,7 @@
 import arcjet, {shield, detectBot, slidingWindow} from "@arcjet/node";
 
 if (!process.env.ARCJET_KEY && process.env.NODE_ENV !== 'test'){
-    throw new Error('ARCJET_KEY env is required')
+    console.warn('WARN: ARCJET_KEY is not set. Security middleware will not function correctly.')
 }
 
 
