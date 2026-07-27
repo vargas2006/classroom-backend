@@ -17,16 +17,17 @@ app.use(cors({
     methods:['GET', 'POST', 'PUT', 'DELETE'],
 }))
 
+// Health check - must be before security middleware so Railway's health checker is never blocked
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 app.all('/api/auth/*splat', toNodeHandler(auth))
 
 app.use(express.json());
-app.use(securityMiddleware)
+app.use('/api', securityMiddleware)  // Only protect /api routes, not health check
 
 app.use('/api/subjects', subjectRouter);
-
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
 
 
 app.listen(Number(PORT), '0.0.0.0', () => {
