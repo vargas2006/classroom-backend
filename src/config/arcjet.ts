@@ -20,12 +20,6 @@ const aj = arcjet({
         "CATEGORY:TOOL", // allows Postman, curl, Insomnia, etc.
       ],
     }),
-    slidingWindow({
-        mode: 'LIVE',
-        interval: '2s', //second
-        max: 3, //request per 2 seconds
-    })
-
   ],
 });
 

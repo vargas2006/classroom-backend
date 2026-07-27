@@ -39,8 +39,8 @@ router.get("/", async (req,res) => {
         const totalCount = countResult[0]?.count ?? 0;
 
         const subjectList = await db.select({
-             ...getTableColumns(subjects),
-             department: departments.name,
+            ...getTableColumns(subjects),
+            department: departments.name,
             }).from(subjects).leftJoin(departments, eq(subjects.departmentId, departments.id))
             .where(whereClause)
             .orderBy(desc(subjects.createdAt))
