@@ -9,7 +9,7 @@ import { auth } from './lib/auth.js';
 
 
 const app = express();
-const PORT  = process.env.PORT || 8000;
+const PORT  = 8000;
 if (!process.env.FRONTEND_URL) console.warn('WARN: FRONTEND_URL is not set. CORS will not be configured correctly.');
 app.use(cors({
     origin: process.env.FRONTEND_URL,
