@@ -9,6 +9,8 @@ import sessionMiddleware from './middleware/session.js';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './lib/auth.js';
 import classRouter from './routes/classes.js';
+import departmentRouter from './routes/departments.js';
+import statsRouter from './routes/stats.js';
 
 
 const app = express();
@@ -17,7 +19,7 @@ if (!process.env.FRONTEND_URL) console.warn('WARN: FRONTEND_URL is not set. CORS
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials:true,
-    methods:['GET', 'POST', 'PUT', 'DELETE'],
+    methods:['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 }))
 
 // Health check - must be before security middleware so Railway's health checker is never blocked
@@ -34,6 +36,8 @@ app.use('/api', securityMiddleware)  // Only protect /api routes, not health che
 app.use('/api/subjects', subjectRouter);
 app.use('/api/users', userRouter);
 app.use('/api/classes', classRouter);
+app.use('/api/departments', departmentRouter);
+app.use('/api/stats', statsRouter);
 
 
 app.listen(Number(PORT), '0.0.0.0', () => {

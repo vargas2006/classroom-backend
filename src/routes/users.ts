@@ -1,11 +1,14 @@
 import express from 'express';
 import { or, eq, ilike, desc, and, getTableColumns } from 'drizzle-orm';
-import { user } from '../db/schema/index.js';
+import { user, account } from '../db/schema/index.js';
+import { classes } from '../db/schema/index.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm/sql';
+import { createId } from '@paralleldrive/cuid2';
 
 const router = express.Router();
 
+// GET /api/users
 router.get('/', async (req, res) => {
     try {
         const { search, role, page = 1, limit = 10 } = req.query;
@@ -52,12 +55,150 @@ router.get('/', async (req, res) => {
                 page: currentPage,
                 limit: LimitPerPage,
                 total: totalCount,
-                totalPages: Math.ceil(totalCount / LimitPerPage),
+                totalPages: Math.ceil(Number(totalCount) / LimitPerPage),
             },
         });
     } catch (e) {
         console.error(`"GET /users error:", ${e}`);
         res.status(500).json({ error: 'Failed to get users.' });
+    }
+});
+
+// POST /api/users — Admin creates a user directly (no auth flow)
+router.post('/', async (req, res) => {
+    try {
+        const { name, email, role, password } = req.body;
+
+        if (!name || !email || !role) {
+            return res.status(400).json({ error: 'name, email, and role are required.' });
+        }
+
+        const validRoles = ['admin', 'teacher', 'student'];
+        if (!validRoles.includes(role)) {
+            return res.status(400).json({ error: `role must be one of: ${validRoles.join(', ')}` });
+        }
+
+        // Check if email already exists
+        const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, email.toLowerCase()));
+        if (existing) {
+            return res.status(409).json({ error: 'A user with that email already exists.' });
+        }
+
+        const newId = createId();
+        const now = new Date();
+
+        // Insert into user table
+        const [newUser] = await db.insert(user).values({
+            id: newId,
+            name: name.trim(),
+            email: email.toLowerCase().trim(),
+            emailVerified: false,
+            role: role as 'admin' | 'teacher' | 'student',
+            createdAt: now,
+            updatedAt: now,
+        }).returning();
+
+        // If a password was provided, create a credential account entry
+        if (password && password.length >= 6) {
+            const bcrypt = await import('bcryptjs');
+            const hashed = await bcrypt.hash(password, 10);
+            await db.insert(account).values({
+                id: createId(),
+                userId: newId,
+                accountId: newId,
+                providerId: 'credential',
+                password: hashed,
+                createdAt: now,
+                updatedAt: now,
+            }).onConflictDoNothing();
+        }
+
+        res.status(201).json({ data: newUser });
+    } catch (e: any) {
+        if (e?.code === '23505') {
+            return res.status(409).json({ error: 'A user with that email already exists.' });
+        }
+        console.error('POST /users error:', e);
+        res.status(500).json({ error: 'Failed to create user.' });
+    }
+});
+
+
+// GET /api/users/:id
+router.get('/:id', async (req, res) => {
+    try {
+        const id = String(req.params.id);
+
+        const [foundUser] = await db
+            .select({ ...getTableColumns(user) })
+            .from(user)
+            .where(eq(user.id, id));
+
+        if (!foundUser) return res.status(404).json({ error: 'User not found.' });
+
+        res.status(200).json({ data: foundUser });
+    } catch (e) {
+        console.error('GET /users/:id error:', e);
+        res.status(500).json({ error: 'Failed to get user.' });
+    }
+});
+
+// PUT /api/users/:id
+router.put('/:id', async (req, res) => {
+    try {
+        const id = String(req.params.id);
+        const { name, role, image, imageCldPubId } = req.body;
+
+        if (!name) return res.status(400).json({ error: 'name is required.' });
+
+        const updateData: Record<string, any> = { name };
+        if (role) updateData.role = role;
+        if (image !== undefined) updateData.image = image || null;
+        if (imageCldPubId !== undefined) updateData.imageCldPubId = imageCldPubId || null;
+
+        const [updated] = await db
+            .update(user)
+            .set(updateData)
+            .where(eq(user.id, id))
+            .returning();
+
+        if (!updated) return res.status(404).json({ error: 'User not found.' });
+
+        res.status(200).json({ data: updated });
+    } catch (e) {
+        console.error('PUT /users/:id error:', e);
+        res.status(500).json({ error: 'Failed to update user.' });
+    }
+});
+
+// DELETE /api/users/:id
+router.delete('/:id', async (req, res) => {
+    try {
+        const id = String(req.params.id);
+
+        // Restrict if user is a teacher with active classes
+        const [classCount] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(classes)
+            .where(eq(classes.teacherId, id));
+
+        if (Number(classCount?.count) > 0) {
+            return res.status(409).json({
+                error: 'Cannot delete user — they are assigned as teacher to one or more classes. Reassign classes first.',
+            });
+        }
+
+        const [deleted] = await db
+            .delete(user)
+            .where(eq(user.id, id))
+            .returning();
+
+        if (!deleted) return res.status(404).json({ error: 'User not found.' });
+
+        res.status(200).json({ data: deleted, message: 'User deleted.' });
+    } catch (e) {
+        console.error('DELETE /users/:id error:', e);
+        res.status(500).json({ error: 'Failed to delete user.' });
     }
 });
 
