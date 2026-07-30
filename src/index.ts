@@ -1,9 +1,10 @@
-
+import 'dotenv/config';  // MUST be first — loads .env before any other module reads process.env
+// env reload — picks up BETTER_AUTH_SECRET
 import express from 'express';
+
 import subjectRouter from './routes/subjects.js';
 import userRouter from './routes/users.js';
 import cors from 'cors';
-import 'dotenv/config';
 import securityMiddleware from './middleware/security.js';
 import sessionMiddleware from './middleware/session.js';
 import { toNodeHandler } from 'better-auth/node';
@@ -27,7 +28,23 @@ app.get('/', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-app.all('/api/auth/*splat', toNodeHandler(auth))
+// Log env status at startup
+console.log('[startup] BETTER_AUTH_SECRET set:', !!process.env.BETTER_AUTH_SECRET);
+console.log('[startup] BETTER_AUTH_URL:', process.env.BETTER_AUTH_URL ?? process.env.BACKEND_URL);
+
+// Auth route — catch + log any unhandled errors
+const authHandler = toNodeHandler(auth);
+app.all('/api/auth/*splat', async (req, res) => {
+    try {
+        await authHandler(req, res);
+    } catch (e: any) {
+        console.error('[auth handler error]', e?.message ?? e);
+        if (!res.headersSent) {
+            res.status(500).json({ error: e?.message ?? 'Auth error' });
+        }
+    }
+});
+
 
 app.use(express.json());
 app.use('/api', sessionMiddleware)    // Attach session/user before rate limiting

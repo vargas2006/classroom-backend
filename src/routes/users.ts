@@ -100,8 +100,8 @@ router.post('/', async (req, res) => {
 
         // If a password was provided, create a credential account entry
         if (password && password.length >= 6) {
-            const bcrypt = await import('bcryptjs');
-            const hashed = await bcrypt.hash(password, 10);
+            const { hashPassword } = await import('better-auth/crypto');
+            const hashed = await hashPassword(password);
             await db.insert(account).values({
                 id: createId(),
                 userId: newId,
@@ -168,6 +168,78 @@ router.put('/:id', async (req, res) => {
     } catch (e) {
         console.error('PUT /users/:id error:', e);
         res.status(500).json({ error: 'Failed to update user.' });
+    }
+});
+
+// PATCH /api/users/:id — Self-profile update (name + image only, no role change)
+router.patch('/:id', async (req, res) => {
+    try {
+        const id = String(req.params.id);
+        const { name, image, imageCldPubId } = req.body;
+
+        if (!name || String(name).trim().length < 2) {
+            return res.status(400).json({ error: 'name is required (min 2 characters).' });
+        }
+
+        const updateData: Record<string, any> = { name: String(name).trim() };
+        if (image !== undefined) updateData.image = image || null;
+        if (imageCldPubId !== undefined) updateData.imageCldPubId = imageCldPubId || null;
+
+        const [updated] = await db
+            .update(user)
+            .set(updateData)
+            .where(eq(user.id, id))
+            .returning();
+
+        if (!updated) return res.status(404).json({ error: 'User not found.' });
+
+        res.status(200).json({ data: updated });
+    } catch (e) {
+        console.error('PATCH /users/:id error:', e);
+        res.status(500).json({ error: 'Failed to update profile.' });
+    }
+});
+
+// POST /api/users/:id/change-password
+router.post('/:id/change-password', async (req, res) => {
+    try {
+        const id = String(req.params.id);
+        const { currentPassword, newPassword } = req.body;
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: 'currentPassword and newPassword are required.' });
+        }
+        if (String(newPassword).length < 6) {
+            return res.status(400).json({ error: 'newPassword must be at least 6 characters.' });
+        }
+
+        // Fetch the credential account for this user
+        const [credAccount] = await db
+            .select({ password: account.password })
+            .from(account)
+            .where(eq(account.userId, id))
+            .limit(1);
+
+        if (!credAccount?.password) {
+            return res.status(404).json({ error: 'No password credential found for this user.' });
+        }
+
+        const { hashPassword, verifyPassword } = await import('better-auth/crypto');
+        const isValid = await verifyPassword({ hash: credAccount.password, password: String(currentPassword) });
+        if (!isValid) {
+            return res.status(401).json({ error: 'Current password is incorrect.' });
+        }
+
+        const hashed = await hashPassword(String(newPassword));
+        await db
+            .update(account)
+            .set({ password: hashed })
+            .where(eq(account.userId, id));
+
+        res.status(200).json({ message: 'Password updated successfully.' });
+    } catch (e) {
+        console.error('POST /users/:id/change-password error:', e);
+        res.status(500).json({ error: 'Failed to change password.' });
     }
 });
 
