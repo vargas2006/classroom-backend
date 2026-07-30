@@ -219,6 +219,53 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// PATCH /api/classes/:id
+router.patch('/:id', async (req, res) => {
+    try {
+        const classId = Number(req.params.id);
+        if (!Number.isFinite(classId)) return res.status(400).json({ error: 'Invalid class ID.' });
+
+        const {
+            name,
+            subjectId,
+            teacherId,
+            description,
+            capacity,
+            status,
+            bannerUrl,
+            bannerCldPubId,
+            schedules,
+        } = req.body;
+
+        if (!name || !subjectId || !teacherId) {
+            return res.status(400).json({ error: 'name, subjectId, and teacherId are required.' });
+        }
+
+        const [updated] = await db
+            .update(classes)
+            .set({
+                name,
+                subjectId: Number(subjectId),
+                teacherId,
+                description: description ?? null,
+                capacity: capacity ? Number(capacity) : 50,
+                status: status || 'active',
+                bannerUrl: bannerUrl ?? null,
+                bannerCldPubId: bannerCldPubId ?? null,
+                schedules: schedules || [],
+            })
+            .where(eq(classes.id, classId))
+            .returning();
+
+        if (!updated) return res.status(404).json({ error: 'Class not found.' });
+
+        res.status(200).json({ data: updated });
+    } catch (e) {
+        console.error('PATCH /classes/:id error:', e);
+        res.status(500).json({ error: 'Failed to update class.' });
+    }
+});
+
 // DELETE /api/classes/:id
 router.delete('/:id', async (req, res) => {
     try {
