@@ -1,16 +1,25 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../db/index.js";
-import * as schema from '../db/schema/auth.js'
+import * as schema from '../db/schema/auth.js';
+
+const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL ?? process.env.BACKEND_URL,
+    baseURL: backendUrl,
     secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [process.env.FRONTEND_URL!, process.env.BACKEND_URL!],
+    trustedOrigins: [frontendUrl, backendUrl],
     database: drizzleAdapter(db, {
         provider: "pg", 
         schema,
     }),
+    advanced: {
+        defaultCookieAttributes: {
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
+        },
+    },
     emailAndPassword: {
         enabled: true,
     },
@@ -27,7 +36,6 @@ export const auth = betterAuth({
                 required: false,
                 input: true,
             }
-
         }
     }
 });

@@ -16,12 +16,21 @@ import statsRouter from './routes/stats.js';
 
 const app = express();
 const PORT  = 8000;
-if (!process.env.FRONTEND_URL) console.warn('WARN: FRONTEND_URL is not set. CORS will not be configured correctly.');
+const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
+const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL)?.replace(/\/$/, '');
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials:true,
-    methods:['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-}))
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const normalized = origin.replace(/\/$/, '');
+        if (!frontendUrl || normalized === frontendUrl || normalized === backendUrl || process.env.NODE_ENV !== 'production') {
+            return callback(null, true);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}));
 
 // Health check - must be before security middleware so Railway's health checker is never blocked
 app.get('/', (req, res) => {
