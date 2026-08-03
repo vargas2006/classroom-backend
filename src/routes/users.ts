@@ -5,11 +5,12 @@ import { classes } from '../db/schema/index.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm/sql';
 import { createId } from '@paralleldrive/cuid2';
+import { requireRole } from '../middleware/role.js';
 
 const router = express.Router();
 
-// GET /api/users
-router.get('/', async (req, res) => {
+// GET /api/users (Admin & Teacher only)
+router.get('/', requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const { search, role, page = 1, limit = 10 } = req.query;
 
@@ -65,7 +66,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/users — Admin creates a user directly (no auth flow)
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin'), async (req, res) => {
     try {
         const { name, email, role, password } = req.body;
 
@@ -143,8 +144,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// PUT /api/users/:id
-router.put('/:id', async (req, res) => {
+// PUT /api/users/:id (Admin only)
+router.put('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = String(req.params.id);
         const { name, role, image, imageCldPubId } = req.body;
@@ -175,6 +176,9 @@ router.put('/:id', async (req, res) => {
 router.patch('/:id', async (req, res) => {
     try {
         const id = String(req.params.id);
+        if (req.user?.id !== id && req.user?.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
         const { name, image, imageCldPubId } = req.body;
 
         if (!name || String(name).trim().length < 2) {
@@ -204,6 +208,9 @@ router.patch('/:id', async (req, res) => {
 router.post('/:id/change-password', async (req, res) => {
     try {
         const id = String(req.params.id);
+        if (req.user?.id !== id && req.user?.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied.' });
+        }
         const { currentPassword, newPassword } = req.body;
 
         if (!currentPassword || !newPassword) {
@@ -244,7 +251,7 @@ router.post('/:id/change-password', async (req, res) => {
 });
 
 // DELETE /api/users/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = String(req.params.id);
 

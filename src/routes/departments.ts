@@ -3,6 +3,7 @@ import { eq, ilike, and, or, desc } from 'drizzle-orm';
 import { departments, subjects } from '../db/schema/index.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm/sql';
+import { requireRole } from '../middleware/role.js';
 
 const router = express.Router();
 
@@ -73,8 +74,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/departments
-router.post('/', async (req, res) => {
+// POST /api/departments (Admin only)
+router.post('/', requireRole('admin'), async (req, res) => {
     try {
         const { code, name, description } = req.body;
         if (!code || !name) {
@@ -96,8 +97,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT /api/departments/:id
-router.put('/:id', async (req, res) => {
+// PUT /api/departments/:id (Admin only)
+router.put('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid department ID.' });
@@ -126,7 +127,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/departments/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid department ID.' });

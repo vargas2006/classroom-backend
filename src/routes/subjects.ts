@@ -4,6 +4,7 @@ import { subjects, departments, classes } from '../db/schema/index.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm/sql';
 import { getTableColumns } from 'drizzle-orm';
+import { requireRole } from '../middleware/role.js';
 
 const router = express.Router();
 
@@ -90,8 +91,8 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/subjects
-router.post('/', async (req, res) => {
+// POST /api/subjects (Admin only)
+router.post('/', requireRole('admin'), async (req, res) => {
     try {
         const { name, code, description, departmentId } = req.body;
 
@@ -122,8 +123,8 @@ router.post('/', async (req, res) => {
     }
 });
 
-// PUT /api/subjects/:id
-router.put('/:id', async (req, res) => {
+// PUT /api/subjects/:id (Admin only)
+router.put('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid subject ID.' });
@@ -156,8 +157,8 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE /api/subjects/:id
-router.delete('/:id', async (req, res) => {
+// DELETE /api/subjects/:id (Admin only)
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
         const id = Number(req.params.id);
         if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid subject ID.' });

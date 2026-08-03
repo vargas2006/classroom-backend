@@ -5,6 +5,7 @@ import { user } from '../db/schema/index.js';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm/sql';
 import crypto from 'crypto';
+import { requireRole } from '../middleware/role.js';
 
 const router = express.Router();
 
@@ -127,7 +128,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/classes
-router.post('/', async (req, res) => {
+router.post('/', requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const {
             name,
@@ -173,7 +174,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/classes/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const classId = Number(req.params.id);
         if (!Number.isFinite(classId)) return res.status(400).json({ error: 'Invalid class ID.' });
@@ -220,7 +221,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // PATCH /api/classes/:id
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const classId = Number(req.params.id);
         if (!Number.isFinite(classId)) return res.status(400).json({ error: 'Invalid class ID.' });
@@ -267,7 +268,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // DELETE /api/classes/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireRole('admin'), async (req, res) => {
     try {
         const classId = Number(req.params.id);
         if (!Number.isFinite(classId)) return res.status(400).json({ error: 'Invalid class ID.' });
@@ -287,7 +288,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // POST /api/classes/:id/regenerate-invite
-router.post('/:id/regenerate-invite', async (req, res) => {
+router.post('/:id/regenerate-invite', requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const classId = Number(req.params.id);
         if (!Number.isFinite(classId)) return res.status(400).json({ error: 'Invalid class ID.' });
