@@ -22,7 +22,7 @@ import statsRouter from './routes/stats.js';
 
 
 const app = express();
-const PORT  = 8000;
+const PORT = process.env.PORT || 8000;
 const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
 const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL)?.replace(/\/$/, '');
 
