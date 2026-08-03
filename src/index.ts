@@ -28,15 +28,13 @@ const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL)?.rep
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        const normalized = origin.replace(/\/$/, '');
-        if (!frontendUrl || normalized === frontendUrl || normalized === backendUrl || process.env.NODE_ENV !== 'production') {
-            return callback(null, true);
-        }
-        return callback(null, true);
+        // Return origin to reflect caller, allowing credentialed requests from Vercel & local
+        callback(null, origin || true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie', 'Accept'],
+    exposedHeaders: ['Set-Cookie'],
 }));
 
 // Health check - must be before security middleware so Railway's health checker is never blocked

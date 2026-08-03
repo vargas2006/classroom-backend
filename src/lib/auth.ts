@@ -9,7 +9,13 @@ const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL || 'h
 export const auth = betterAuth({
     baseURL: backendUrl,
     secret: process.env.BETTER_AUTH_SECRET,
-    trustedOrigins: [frontendUrl, backendUrl],
+    trustedOrigins: [
+        'https://classroom-frontend-seven-pi.vercel.app',
+        frontendUrl,
+        backendUrl,
+        'http://localhost:5173',
+        'http://localhost:3000',
+    ].filter(Boolean),
     database: drizzleAdapter(db, {
         provider: "pg", 
         schema,
