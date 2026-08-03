@@ -8,7 +8,7 @@ const backendUrl = (process.env.BETTER_AUTH_URL || process.env.BACKEND_URL || 'h
 
 export const auth = betterAuth({
     baseURL: backendUrl,
-    secret: process.env.BETTER_AUTH_SECRET,
+    secret: process.env.BETTER_AUTH_SECRET || 'fallback_secret_must_be_set_in_production_env',
     trustedOrigins: [
         'https://classroom-frontend-seven-pi.vercel.app',
         frontendUrl,

@@ -6,5 +6,6 @@ if (!process.env.DATABASE_URL) {
   console.warn('WARN: DATABASE_URL is not defined. Database operations will fail.');
 }
 
-const sql = neon(process.env.DATABASE_URL!);
+const connectionString = process.env.DATABASE_URL || 'postgresql://placeholder:placeholder@localhost:5432/placeholder';
+const sql = neon(connectionString);
 export const db = drizzle(sql);

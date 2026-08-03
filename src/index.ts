@@ -1,6 +1,13 @@
 import 'dotenv/config';  // MUST be first — loads .env before any other module reads process.env
 import crypto from 'node:crypto';
 
+process.on('uncaughtException', (err) => {
+    console.error('[FATAL UNCAUGHT EXCEPTION]', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('[UNHANDLED REJECTION]', reason);
+});
+
 // Polyfill globalThis.crypto for Better Auth in production environments where Web Crypto API is not in global scope
 if (typeof globalThis.crypto === 'undefined') {
     // @ts-ignore
