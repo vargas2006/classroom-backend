@@ -1,5 +1,12 @@
 import 'dotenv/config';  // MUST be first — loads .env before any other module reads process.env
-// env reload — picks up BETTER_AUTH_SECRET
+import crypto from 'node:crypto';
+
+// Polyfill globalThis.crypto for Better Auth in production environments where Web Crypto API is not in global scope
+if (typeof globalThis.crypto === 'undefined') {
+    // @ts-ignore
+    globalThis.crypto = crypto.webcrypto || crypto;
+}
+
 import express from 'express';
 
 import subjectRouter from './routes/subjects.js';
