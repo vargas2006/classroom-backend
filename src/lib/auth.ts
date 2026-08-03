@@ -15,7 +15,7 @@ export const auth = betterAuth({
         backendUrl,
         'http://localhost:5173',
         'http://localhost:3000',
-    ].filter(Boolean),
+    ] as string[],
     database: drizzleAdapter(db, {
         provider: "pg", 
         schema,
